@@ -1,0 +1,142 @@
+{% extends "employee_register/base.html" %} 
+
+{% block title %} {{page_name}} {% endblock title %}
+{% block content %} 
+{% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="alert alert-danger">
+                {{ field.label }} <strong>{{ error|escape }}</strong>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ field.label }} <strong>{{ error|escape }}</strong>
+        </div>
+    {% endfor %}
+{% endif %}
+<table class="table table-borderless">
+    <thead class="border-bottom font-weight-bold">
+        <tr>
+            {% if send %} 
+                <th><input type="checkbox" name="" id="all_check" onclick="all_check(this)"></th>
+            {% endif %}
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Email Address</th>
+            <th>
+                <a href="{% url 'employee_insert' %} " class="btn btn-outline-success">
+                    <i class="fas fa-plus"></i> Add New
+                </a>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if employee_list|length == 0 %} 
+            <tr>
+                <td class="text-center" colspan="5">No result</td>
+            </tr>
+        {% endif %}
+        {% for employee in employee_list %}
+            <tr>
+                {% if send %} 
+                    <td><input type="checkbox" name="" class="sh-check" id="{{employee.id}}"></td>
+                {% endif %}
+                <td>{{forloop.counter}}</td>
+                <td>{{employee.fullname}}</td>
+                <td>{{employee.email}}</td>
+                <td>
+                    <a href="{% url 'employee_update' employee.id %}" class="btn text-secondary px-0">
+                        <i class="fas fa-edit fa-lg"></i>
+                    </a>
+                    <form action="{% url 'employee_delete' employee.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn">
+                            <i class="fas fa-trash-alt fa-lg text-danger float-right"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if send %}
+    <hr>
+    <div class="row">
+        <div class="col-md-8">
+            <button type="button" class="btn btn-secondary btn-block" id="send_button">
+                <span id="spiner" class="d-none spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <i class="fas fa-file-import"></i>
+                <span class="send-text">Send</span>
+            </button>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'employee_insert' %}" class="btn btn-outline-secondary btn-block"><i class="fas fa-send-back"> Cancel </i></a>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock content %}
+
+{% block script %}
+{% if send %}
+<script>
+
+    all_check = function(parent_checkbox) {
+        $('tbody>tr').each(function(){
+            $('input.sh-check', this)[0].checked = parent_checkbox.checked;
+        })
+    }
+    $("#send_button").click(function(){
+            var selected = [];
+            $('.sh-check:checked').each(function() {
+                selected.push($(this).attr('id'));
+            });
+            if (selected.length > 0) {
+                $('.send-text', this).text('Sending');
+                $('i.fas', this).toggleClass('d-none');
+                $('span#spiner', this).toggleClass('d-none');
+                $.ajaxSetup({ 
+                    beforeSend: function(xhr, settings) {
+                        function getCookie(name) {
+                            var cookieValue = null;
+                            if (document.cookie && document.cookie != '') {
+                                var cookies = document.cookie.split(';');
+                                for (var i = 0; i < cookies.length; i++) {
+                                    var cookie = jQuery.trim(cookies[i]);
+                                    // Does this cookie string begin with the name we want?
+                                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                        break;
+                                    }
+                                }
+                            }
+                            return cookieValue;
+                        }
+                        if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                            // Only send the token to relative URLs i.e. locally.
+                            xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                        }
+                    }
+                });
+                $.post( "{% url 'ics_send' %}", { 'selected' : selected, }, function(res) {
+                    console.log(res)
+                    if(!res) {
+                        alert('Failed to send File.')
+                    }else {
+                        alert('Success to send File.')
+                    }
+                    $('.send-text', this).text('Send');
+                    $('i.fas', this).toggleClass('d-none');
+                    $('span#spiner', this).toggleClass('d-none');
+                }); 
+                
+            } else if (selected.length == 0) {
+                alert('Please confirm recivers.');
+            }
+    })
+
+</script>
+{% endif %}
+{% endblock script %}

@@ -1,0 +1,18 @@
+{% extends "employee_register/base.html" %} 
+{% load crispy_forms_tags %}
+
+{% block title %} {{page_name}} {% endblock title %}
+{% block content %} 
+<form action="" method="post" autocomplete="off">
+    {% csrf_token %}    
+    {{form.summary|as_crispy_field}}
+    {{form.description|as_crispy_field}}
+    {{form.start_time|as_crispy_field}}
+    {{form.end_time|as_crispy_field}}
+    <div class="row">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-success btn-block btn-lg"><i class="fas fa-database"></i> SAVE </button>
+        </div>
+    </div>
+</form>
+{% endblock content %}
